@@ -1,0 +1,50 @@
+name: Autograding Tests
+'on':
+- push
+- repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Run main file
+      id: run-main-file
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Run main file
+        setup-command: ''
+        command: g++ main.cpp
+        timeout: 10
+        max-score: 25
+    - name: Run test file
+      id: run-test-file
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Run test file
+        setup-command: ''
+        command: g++ tests/test.cpp
+        timeout: 10
+        max-score: 25
+    - name: Run assertion
+      id: run-assertion
+      uses: classroom-resources/autograding-command-grader@v1
+      with:
+        test-name: Run assertion
+        setup-command: ''
+        command: g++ tests/test.cpp -o a.out && ./a.out
+        timeout: 10
+        max-score: 50
+    - name: Autograding Reporter
+      uses: classroom-resources/autograding-grading-reporter@v1
+      env:
+        RUN-MAIN-FILE_RESULTS: "${{steps.run-main-file.outputs.result}}"
+        RUN-TEST-FILE_RESULTS: "${{steps.run-test-file.outputs.result}}"
+        RUN-ASSERTION_RESULTS: "${{steps.run-assertion.outputs.result}}"
+      with:
+        runners: run-main-file,run-test-file,run-assertion
